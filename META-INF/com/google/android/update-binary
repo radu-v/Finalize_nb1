@@ -29,7 +29,7 @@ ui_print "- Erasing the misc partition to prevent TWRP bootloop"
 dd if=/dev/zero of=/dev/block/bootdevice/by-name/misc bs=1048576
 sleep 1
 
-IGNORED=" system_a system_b boot_a boot_b "
+IGNORED=" system_a system_b boot_a boot_b vendor_a vendor_b "
 
 suffix_active=$(getprop ro.boot.slot_suffix)
 
