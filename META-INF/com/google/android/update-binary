@@ -1,0 +1,57 @@
+#!/sbin/sh
+#Created by Prakyy @xda-developers >>
+#Updated for NB1 by oaid @xda-developers
+
+OUTFD=/proc/self/fd/$2;
+ZIPFILE="$3";
+DIR=$(dirname "$ZIPFILE");
+
+ui_print() {
+  while [ "$1" ]; do
+    echo -e "ui_print $1
+      ui_print" >> $OUTFD;
+    shift;
+  done;
+}
+getprop() { test -e /sbin/getprop && /sbin/getprop $1 || grep "^$1=" /default.prop | cut -d= -f2-; }
+show_progress() { echo "progress $1 $2" >> $OUTFD; }
+
+#####################################################
+
+ui_print " "
+ui_print "Finalizing custom ROM Installation..."
+sleep 1
+ui_print " "
+ui_print "- Clearing Dalvik Cache"
+rm -rf /data/dalvik-cache/*
+sleep 1
+ui_print "- Erasing the misc partition to prevent TWRP bootloop"
+dd if=/dev/zero of=/dev/block/bootdevice/by-name/misc bs=1048576
+sleep 1
+
+IGNORED=" system_a system_b boot_a boot_b "
+
+suffix_active=$(getprop ro.boot.slot_suffix)
+
+if [[ "$suffix_active" == "_a" ]]; then
+  suffix_swap="_b"
+else
+  suffix_swap="_a"
+fi
+
+ui_print "- Copying firmware to both slots"
+ui_print " "
+show_progress 1.0 70
+
+for active in /dev/block/bootdevice/by-name/*$suffix_active; do
+	partition=$(basename $active)
+    if [[ "${IGNORED/$partition}" = "$IGNORED" ]]; then
+        echo "Copying ${partition/$suffix_active}"
+  	    inactive=$(echo $active | sed "s/${suffix_active}\$/${suffix_swap}/");
+        part_active=$(readlink -fn $active);
+        part_inactive=$(readlink -fn $inactive);
+        if [[ -n "$part_active" && -n "$part_active" && "$active" != "$part_active" && "$inactive" != "$part_inactive" ]]; then
+          dd if=$part_inactive of=$part_active
+        fi
+    fi
+done
